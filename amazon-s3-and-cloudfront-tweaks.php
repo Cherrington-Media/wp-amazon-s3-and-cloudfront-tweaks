@@ -117,14 +117,14 @@ class Amazon_S3_and_CloudFront_Tweaks
 		 * settings validation due to Vultr's hot-link protection.
 		 */
 		/* >>> REMOVE THIS COMMENT START LINE AND THE BELOW COMMENT END LINE TO ENABLE Vultr. >>>
-			  add_filter( 'as3cf_do_get_regions', array( $this, 'vultr_get_regions' ) );
-			  //add_filter( 'as3cf_do_spaces_bucket_in_path', '__return_true' ); // Optional
-			  add_filter( 'as3cf_do_spaces_domain', array( $this, 'vultr_domain' ) );
-			  // Update subscription_id in vultr_console_url function.
-			  add_filter( 'as3cf_do_spaces_console_url', array( $this, 'vultr_console_url' ) );
-			  add_filter( 'as3cf_do_spaces_console_url_prefix_param', array( $this, 'vultr_console_url_prefix_param' ) );
-			  add_filter( 'as3cf_do_spaces_console_url_suffix_param', array( $this, 'vultr_console_url_suffix_param' ) );
-			  <<< REMOVE THIS COMMENT END LINE AND THE ABOVE COMMENT START LINE TO ENABLE Vultr. <<< */
+					add_filter( 'as3cf_do_get_regions', array( $this, 'vultr_get_regions' ) );
+					//add_filter( 'as3cf_do_spaces_bucket_in_path', '__return_true' ); // Optional
+					add_filter( 'as3cf_do_spaces_domain', array( $this, 'vultr_domain' ) );
+					// Update subscription_id in vultr_console_url function.
+					add_filter( 'as3cf_do_spaces_console_url', array( $this, 'vultr_console_url' ) );
+					add_filter( 'as3cf_do_spaces_console_url_prefix_param', array( $this, 'vultr_console_url_prefix_param' ) );
+					add_filter( 'as3cf_do_spaces_console_url_suffix_param', array( $this, 'vultr_console_url_suffix_param' ) );
+					<<< REMOVE THIS COMMENT END LINE AND THE ABOVE COMMENT START LINE TO ENABLE Vultr. <<< */
 
 		/*
 		 * Storage related filters.
@@ -321,6 +321,7 @@ class Amazon_S3_and_CloudFront_Tweaks
 	public function linode_s3_client_args($args)
 	{
 		$args['endpoint'] = 'https://linodeobjects.com'; // Linode endpoint
+		$args['region'] = 'us-southeast-1'; // Linode region
 		return $args;
 	}
 
@@ -744,10 +745,10 @@ class Amazon_S3_and_CloudFront_Tweaks
 		// WARNING: Do not uncomment the following code unless you're on shared hosting and getting "too many open files" errors
 		// as `gc_collect_cycles()` could potentially impact performance of the bulk offload and WordPress.
 		/*
-			  if ( false === $abort ) {
-				  gc_collect_cycles();
-			  }
-			  */
+					if ( false === $abort ) {
+						gc_collect_cycles();
+					}
+					*/
 
 		return $abort;
 	}
@@ -885,23 +886,23 @@ class Amazon_S3_and_CloudFront_Tweaks
 		// Example places (potentially large) movie files in a different bucket than configured.
 		// Also changes path prefix to match that used in CDN behavior's "Path Prefix" for this second origin.
 		/*
-			  if ( in_array( $extension, array( 'mp4', 'mov' ) ) ) {
-				  // Change bucket.
-				  $args['Bucket'] = 'my-cheaper-infrequent-access-bucket';
+					if ( in_array( $extension, array( 'mp4', 'mov' ) ) ) {
+						// Change bucket.
+						$args['Bucket'] = 'my-cheaper-infrequent-access-bucket';
 
-				  // Change key (don't do this for images, thumbnails will not get new prefix and will not be usable).
-				  $filename    = pathinfo( $args['Key'], PATHINFO_FILENAME ) . '.' . $extension;
-				  $args['Key'] = 'movies/' . $filename;
-			  }
-			  */
+						// Change key (don't do this for images, thumbnails will not get new prefix and will not be usable).
+						$filename    = pathinfo( $args['Key'], PATHINFO_FILENAME ) . '.' . $extension;
+						$args['Key'] = 'movies/' . $filename;
+					}
+					*/
 
 		// Example sets "Content-Disposition" header to "attachment" so that browsers download rather than play audio files.
 		/*
-			  if ( in_array( $extension, array( 'mp3', 'wav' ) ) ) {
-				  // Note, S3 format trims "-" from header names.
-				  $args['ContentDisposition'] = 'attachment';
-			  }
-			  */
+					if ( in_array( $extension, array( 'mp3', 'wav' ) ) ) {
+						// Note, S3 format trims "-" from header names.
+						$args['ContentDisposition'] = 'attachment';
+					}
+					*/
 
 		return $args;
 	}
