@@ -23,7 +23,8 @@ Network: True
 use DeliciousBrains\WP_Offload_Media\Items\Item;
 use DeliciousBrains\WP_Offload_Media\Items\Media_Library_Item;
 
-class Amazon_S3_and_CloudFront_Tweaks {
+class Amazon_S3_and_CloudFront_Tweaks
+{
 
 	/**
 	 * The constructor holds the `add_filter` and `add_action` statements that can be uncommented to activate them.
@@ -31,7 +32,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * Please only uncomment the statements you need after making sure their respective functions are correctly
 	 * updated for your needs.
 	 */
-	public function __construct() {
+	public function __construct()
+	{
 		/*
 		 * WP Offload Media & WP Offload Media Lite
 		 *
@@ -71,6 +73,14 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		//add_filter( 'as3cf_aws_s3_client_args', array( $this, 'aws_s3_client_args' ), 10, 1 );
 
 		/*
+		 * Custom S3 API : Linode
+		 */
+		// Add filter to modify AWS S3 client arguments for Linode Object Storage
+		add_filter('as3cf_aws_s3_client_args', array($this, 'linode_s3_client_args'), 10, 1);
+		// Add filter to modify the regions list
+		add_filter('as3cf_aws_get_regions', array($this, 'linode_get_regions'));
+
+		/*
 		 * Custom S3 API Example: MinIO
 		 * @see https://min.io/
 		 */
@@ -107,14 +117,14 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		 * settings validation due to Vultr's hot-link protection.
 		 */
 		/* >>> REMOVE THIS COMMENT START LINE AND THE BELOW COMMENT END LINE TO ENABLE Vultr. >>>
-		add_filter( 'as3cf_do_get_regions', array( $this, 'vultr_get_regions' ) );
-		//add_filter( 'as3cf_do_spaces_bucket_in_path', '__return_true' ); // Optional
-		add_filter( 'as3cf_do_spaces_domain', array( $this, 'vultr_domain' ) );
-		// Update subscription_id in vultr_console_url function.
-		add_filter( 'as3cf_do_spaces_console_url', array( $this, 'vultr_console_url' ) );
-		add_filter( 'as3cf_do_spaces_console_url_prefix_param', array( $this, 'vultr_console_url_prefix_param' ) );
-		add_filter( 'as3cf_do_spaces_console_url_suffix_param', array( $this, 'vultr_console_url_suffix_param' ) );
-		<<< REMOVE THIS COMMENT END LINE AND THE ABOVE COMMENT START LINE TO ENABLE Vultr. <<< */
+			  add_filter( 'as3cf_do_get_regions', array( $this, 'vultr_get_regions' ) );
+			  //add_filter( 'as3cf_do_spaces_bucket_in_path', '__return_true' ); // Optional
+			  add_filter( 'as3cf_do_spaces_domain', array( $this, 'vultr_domain' ) );
+			  // Update subscription_id in vultr_console_url function.
+			  add_filter( 'as3cf_do_spaces_console_url', array( $this, 'vultr_console_url' ) );
+			  add_filter( 'as3cf_do_spaces_console_url_prefix_param', array( $this, 'vultr_console_url_prefix_param' ) );
+			  add_filter( 'as3cf_do_spaces_console_url_suffix_param', array( $this, 'vultr_console_url_suffix_param' ) );
+			  <<< REMOVE THIS COMMENT END LINE AND THE ABOVE COMMENT START LINE TO ENABLE Vultr. <<< */
 
 		/*
 		 * Storage related filters.
@@ -183,7 +193,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return int
 	 */
-	public function update_as3cf_items_table_interval( $mins ) {
+	public function update_as3cf_items_table_interval($mins)
+	{
 		// For faster processing, set to smallest cron interval, 1 minute.
 		return 1;
 	}
@@ -197,7 +208,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return int
 	 */
-	public function update_as3cf_items_table_batch_size( $batch_size ) {
+	public function update_as3cf_items_table_batch_size($batch_size)
+	{
 		// For faster processing, process up to 1,000 items per batch run.
 		return 1000;
 	}
@@ -211,7 +223,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return int
 	 */
-	public function update_as3cf_items_table_time_limit( $seconds ) {
+	public function update_as3cf_items_table_time_limit($seconds)
+	{
 		// Give each batch a few more seconds to run.
 		return 25;
 	}
@@ -228,7 +241,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * Note: Settings keys can be found in the Settings Constants doc.
 	 * https://deliciousbrains.com/wp-offload-media/doc/settings-constants/
 	 */
-	public function get_setting_object_prefix( $value ) {
+	public function get_setting_object_prefix($value)
+	{
 		return '/my/custompath/';
 	}
 
@@ -241,7 +255,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function show_deprecated_domain_setting( $show ) {
+	public function show_deprecated_domain_setting($show)
+	{
 		return true;
 	}
 
@@ -258,7 +273,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: A good place for changing 'endpoint', 'credentials' or 'signature_version' for all API requests.
 	 */
-	public function aws_init_client_args( $args ) {
+	public function aws_init_client_args($args)
+	{
 		// Example forces SDK to use the restricted 'cn-north-1' region.
 		$args['region'] = 'cn-north-1';
 
@@ -282,11 +298,45 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: A good place for changing 'signature_version', 'use_path_style_endpoint' etc. for specific bucket/object actions.
 	 */
-	public function aws_s3_client_args( $args ) {
+	public function aws_s3_client_args($args)
+	{
 		// Example forces SDK to use endpoint URLs with bucket name in path rather than domain name.
 		$args['use_path_style_endpoint'] = true;
 
 		return $args;
+	}
+
+	/*
+	 * >>> Linode Start
+	 */
+
+	/**
+	 * Modify the S3 client arguments to use Linode Object Storage endpoint.
+	 *
+	 * @handles `as3cf_aws_s3_client_args`
+	 *
+	 * @param array $args
+	 * @return array
+	 */
+	public function linode_s3_client_args($args)
+	{
+		$args['endpoint'] = 'https://linodeobjects.com'; // Linode endpoint
+		return $args;
+	}
+
+	/**
+	 * Add the Linode region to the available regions list.
+	 *
+	 * @handles `as3cf_aws_get_regions`
+	 *
+	 * @param array $regions
+	 * @return array
+	 */
+	public function linode_get_regions($regions)
+	{
+		$regions['us-southeast-1'] = 'US Southeast - Atlanta GA (Linode)';
+		$regions['us-lax-1'] = 'US LAX - Los Angeles CA (Linode)';
+		return $regions;
 	}
 
 	/*
@@ -311,7 +361,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: A good place for changing 'signature_version', 'use_path_style_endpoint' etc. for specific bucket/object actions.
 	 */
-	public function minio_s3_client_args( $args ) {
+	public function minio_s3_client_args($args)
+	{
 		// Example changes endpoint to connect to a local MinIO server configured to use port 54321 (the default MinIO port is 9000).
 		$args['endpoint'] = 'http://127.0.0.1:54321';
 
@@ -332,7 +383,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * MinIO regions, like Immortals in Highlander, there can be only one.
 	 */
-	public function minio_get_regions( $regions ) {
+	public function minio_get_regions($regions)
+	{
 		$regions = array(
 			'us-east-1' => 'Default',
 		);
@@ -353,7 +405,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function minio_s3_url_domain( $domain, $bucket, $region, $expires, $args ) {
+	public function minio_s3_url_domain($domain, $bucket, $region, $expires, $args)
+	{
 		// MinIO doesn't need a region prefix, and always puts the bucket in the path.
 		return '127.0.0.1:54321/' . $bucket;
 	}
@@ -375,7 +428,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: Only enable this if you are happy with signed URLs and haven't changed the bucket's policy to "Read Only" or similar.
 	 */
-	public function minio_upload_acl( $acl ) {
+	public function minio_upload_acl($acl)
+	{
 		return 'private';
 	}
 
@@ -388,7 +442,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function minio_s3_console_url( $url ) {
+	public function minio_s3_console_url($url)
+	{
 		return 'http://127.0.0.1:54321/minio/';
 	}
 
@@ -407,7 +462,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * MinIO just appends the path prefix directly after the bucket name.
 	 */
-	public function minio_s3_console_url_prefix_param( $param ) {
+	public function minio_s3_console_url_prefix_param($param)
+	{
 		return '/';
 	}
 
@@ -438,9 +494,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * Note: A good place for changing 'signature_version', 'use_path_style_endpoint' etc. for specific bucket/object actions.
 	 * Change the "eu-central-1" region in this example to match your preferred region.
 	 */
-	public function wasabi_s3_client_args( $args ) {
-		$args['endpoint']                = 'https://s3.eu-central-1.wasabisys.com';
-		$args['region']                  = 'eu-central-1';
+	public function wasabi_s3_client_args($args)
+	{
+		$args['endpoint'] = 'https://s3.eu-central-1.wasabisys.com';
+		$args['region'] = 'eu-central-1';
 		$args['use_path_style_endpoint'] = true;
 
 		return $args;
@@ -455,21 +512,22 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return array
 	 */
-	public function wasabi_get_regions( $regions ) {
+	public function wasabi_get_regions($regions)
+	{
 		$regions = array(
 			'ap-northeast-1' => 'Wasabi AP Northeast 1 (Tokyo)',
 			'ap-northeast-2' => 'Wasabi AP Northeast 2 (Osaka)',
 			'ap-southeast-1' => 'Wasabi AP Southeast 1 (Singapore)',
 			'ap-southeast-2' => 'Wasabi AP Southeast 2 (Sydney)',
-			'ca-central-1'   => 'Wasabi CA Central 1 (Toronto)',
-			'eu-central-1'   => 'Wasabi EU Central 1 (Amsterdam)',
-			'eu-central-2'   => 'Wasabi EU Central 2 (Frankfurt)',
-			'eu-west-1'      => 'Wasabi EU West 1 (London)',
-			'eu-west-2'      => 'Wasabi EU West 2 (Paris)',
-			'us-west-1'      => 'Wasabi US West 1 (Oregon)',
-			'us-central-1'   => 'Wasabi US Central 1 (Texas)',
-			'us-east-1'      => 'Wasabi US East 1 (N. Virginia)',
-			'us-east-2'      => 'Wasabi US East 2 (N. Virginia)',
+			'ca-central-1' => 'Wasabi CA Central 1 (Toronto)',
+			'eu-central-1' => 'Wasabi EU Central 1 (Amsterdam)',
+			'eu-central-2' => 'Wasabi EU Central 2 (Frankfurt)',
+			'eu-west-1' => 'Wasabi EU West 1 (London)',
+			'eu-west-2' => 'Wasabi EU West 2 (Paris)',
+			'us-west-1' => 'Wasabi US West 1 (Oregon)',
+			'us-central-1' => 'Wasabi US Central 1 (Texas)',
+			'us-east-1' => 'Wasabi US East 1 (N. Virginia)',
+			'us-east-2' => 'Wasabi US East 2 (N. Virginia)',
 		);
 
 		return $regions;
@@ -484,7 +542,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function wasabi_domain( $domain ) {
+	public function wasabi_domain($domain)
+	{
 		return 'wasabisys.com';
 	}
 
@@ -497,7 +556,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function wasabi_s3_console_url( $url ) {
+	public function wasabi_s3_console_url($url)
+	{
 		return 'https://console.wasabisys.com/#/file_manager/';
 	}
 
@@ -520,7 +580,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return array
 	 */
-	public function vultr_get_regions( $regions ) {
+	public function vultr_get_regions($regions)
+	{
 		$regions = array(
 			'ams1' => 'Amsterdam',
 			'blr1' => 'Bangalore',
@@ -542,7 +603,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function vultr_domain( $domain ) {
+	public function vultr_domain($domain)
+	{
 		return 'vultrobjects.com';
 	}
 
@@ -556,7 +618,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function vultr_console_url( $url ) {
+	public function vultr_console_url($url)
+	{
 		// Add your subscription id here, as seen in Vultr console's URL as "id".
 		$subscription_id = '12345678-90ab-cdef-1234-567890abcdef';
 
@@ -576,7 +639,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function vultr_console_url_prefix_param( $param ) {
+	public function vultr_console_url_prefix_param($param)
+	{
 		return '=';
 	}
 
@@ -591,7 +655,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function vultr_console_url_suffix_param( $param ) {
+	public function vultr_console_url_suffix_param($param)
+	{
 		return '#buckets';
 	}
 
@@ -614,9 +679,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return array
 	 */
-	public function allowed_mime_types( $types ) {
+	public function allowed_mime_types($types)
+	{
 		// Disallow offload of PDFs.
-		unset( $types['pdf'] );
+		unset($types['pdf']);
 
 		// Allow offload of PDFs.
 		$types['pdf'] = 'application/pdf';
@@ -639,11 +705,12 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * Note: Filter fires when attachment uploaded to Media Library, edited or metadata otherwise
 	 * updated by some process.
 	 */
-	public function pre_update_attachment_metadata( $abort, $data, $post_id, $old_as3cf_item ) {
+	public function pre_update_attachment_metadata($abort, $data, $post_id, $old_as3cf_item)
+	{
 		// Example stops movie files from being offloaded when added to library or metadata updated.
-		$file      = get_post_meta( $post_id, '_wp_attached_file', true );
-		$extension = is_string( $file ) ? pathinfo( $file, PATHINFO_EXTENSION ) : false;
-		if ( is_string( $extension ) && in_array( $extension, array( 'mp4', 'mov' ) ) ) {
+		$file = get_post_meta($post_id, '_wp_attached_file', true);
+		$extension = is_string($file) ? pathinfo($file, PATHINFO_EXTENSION) : false;
+		if (is_string($extension) && in_array($extension, array('mp4', 'mov'))) {
 			$abort = true; // abort the upload
 		}
 
@@ -664,11 +731,12 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * Note: Filter fires when attachment is about to be offloaded for any reason,
 	 * including using Pro's bulk offload tools.
 	 */
-	public function pre_upload_attachment( $abort, $post_id, $metadata ) {
+	public function pre_upload_attachment($abort, $post_id, $metadata)
+	{
 		// Example stops movie files from being offloaded.
-		$file      = get_post_meta( $post_id, '_wp_attached_file', true );
-		$extension = is_string( $file ) ? pathinfo( $file, PATHINFO_EXTENSION ) : false;
-		if ( is_string( $extension ) && in_array( $extension, array( 'mp4', 'mov' ) ) ) {
+		$file = get_post_meta($post_id, '_wp_attached_file', true);
+		$extension = is_string($file) ? pathinfo($file, PATHINFO_EXTENSION) : false;
+		if (is_string($extension) && in_array($extension, array('mp4', 'mov'))) {
 			$abort = true; // abort the upload
 		}
 
@@ -676,10 +744,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		// WARNING: Do not uncomment the following code unless you're on shared hosting and getting "too many open files" errors
 		// as `gc_collect_cycles()` could potentially impact performance of the bulk offload and WordPress.
 		/*
-		if ( false === $abort ) {
-			gc_collect_cycles();
-		}
-		*/
+			  if ( false === $abort ) {
+				  gc_collect_cycles();
+			  }
+			  */
 
 		return $abort;
 	}
@@ -700,7 +768,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * The `$legacy_ms_prefix` should not start with "/".
 	 * The `$legacy_ms_prefix` should end with "/".
 	 */
-	public function legacy_ms_subsite_prefix( $legacy_ms_prefix, $details ) {
+	public function legacy_ms_subsite_prefix($legacy_ms_prefix, $details)
+	{
 		$legacy_ms_prefix = 'sites/' . $details->blog_id . '/';
 
 		return $legacy_ms_prefix;
@@ -721,7 +790,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * The `$object_version` should not start with "/".
 	 * The `$object_version` should end with "/".
 	 */
-	public function get_object_version_string( $object_version ) {
+	public function get_object_version_string($object_version)
+	{
 		// This appends "my-string/" to the current object version string.
 		// e.g. "235959/" becomes "235959/my-string/".
 		$object_version .= 'my-string/';
@@ -741,12 +811,13 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function upload_object_key_as_private( $is_private, $object_key, $as3cf_item ) {
-		if ( Media_Library_Item::source_type() !== $as3cf_item->source_type() ) {
+	public function upload_object_key_as_private($is_private, $object_key, $as3cf_item)
+	{
+		if (Media_Library_Item::source_type() !== $as3cf_item->source_type()) {
 			return $is_private;
 		}
 
-		if ( Item::primary_object_key() === $object_key ) {
+		if (Item::primary_object_key() === $object_key) {
 			return true;
 		}
 
@@ -763,7 +834,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function upload_every_object_key_as_private( $is_private ) {
+	public function upload_every_object_key_as_private($is_private)
+	{
 		return true;
 	}
 
@@ -777,7 +849,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return array
 	 */
-	public function gzip_mime_types( $mime_types, $media_library ) {
+	public function gzip_mime_types($mime_types, $media_library)
+	{
 		// Don't GZip any offloads, keep them pristine.
 		$mime_types = array();
 
@@ -805,29 +878,30 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: Only fires for the "original" media file, image sizes etc. will be placed next to original in bucket.
 	 */
-	public function object_meta( $args, $post_id, $image_size, $copy ) {
-		$extension = pathinfo( $args['Key'], PATHINFO_EXTENSION );
+	public function object_meta($args, $post_id, $image_size, $copy)
+	{
+		$extension = pathinfo($args['Key'], PATHINFO_EXTENSION);
 
 		// Example places (potentially large) movie files in a different bucket than configured.
 		// Also changes path prefix to match that used in CDN behavior's "Path Prefix" for this second origin.
 		/*
-		if ( in_array( $extension, array( 'mp4', 'mov' ) ) ) {
-			// Change bucket.
-			$args['Bucket'] = 'my-cheaper-infrequent-access-bucket';
+			  if ( in_array( $extension, array( 'mp4', 'mov' ) ) ) {
+				  // Change bucket.
+				  $args['Bucket'] = 'my-cheaper-infrequent-access-bucket';
 
-			// Change key (don't do this for images, thumbnails will not get new prefix and will not be usable).
-			$filename    = pathinfo( $args['Key'], PATHINFO_FILENAME ) . '.' . $extension;
-			$args['Key'] = 'movies/' . $filename;
-		}
-		*/
+				  // Change key (don't do this for images, thumbnails will not get new prefix and will not be usable).
+				  $filename    = pathinfo( $args['Key'], PATHINFO_FILENAME ) . '.' . $extension;
+				  $args['Key'] = 'movies/' . $filename;
+			  }
+			  */
 
 		// Example sets "Content-Disposition" header to "attachment" so that browsers download rather than play audio files.
 		/*
-		if ( in_array( $extension, array( 'mp3', 'wav' ) ) ) {
-			// Note, S3 format trims "-" from header names.
-			$args['ContentDisposition'] = 'attachment';
-		}
-		*/
+			  if ( in_array( $extension, array( 'mp3', 'wav' ) ) ) {
+				  // Note, S3 format trims "-" from header names.
+				  $args['ContentDisposition'] = 'attachment';
+			  }
+			  */
 
 		return $args;
 	}
@@ -844,12 +918,13 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return array
 	 */
-	public function attachment_file_paths( $paths, $attachment_id, $metadata ) {
+	public function attachment_file_paths($paths, $attachment_id, $metadata)
+	{
 		// Example adds some backup files created for original and all thumbnails by some plugin, if they exist.
-		foreach ( $paths as $file ) {
-			$pathinfo   = pathinfo( $file );
+		foreach ($paths as $file) {
+			$pathinfo = pathinfo($file);
 			$extra_file = $pathinfo['dirname'] . '/' . $pathinfo['filename'] . '-backup-copy.' . $pathinfo['extension'];
-			if ( file_exists( $extra_file ) ) {
+			if (file_exists($extra_file)) {
 				$paths[] = $extra_file;
 			}
 		}
@@ -871,10 +946,11 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: Filter only fires when a media item is being (re)offloaded to bucket and "Remove Files From Server" is turned on.
 	 */
-	public function upload_attachment_local_files_to_remove( $files_to_remove, $post_id, $file_path ) {
+	public function upload_attachment_local_files_to_remove($files_to_remove, $post_id, $file_path)
+	{
 		// Example stops the original path/to/file.jpg from being removed from server when copying to bucket.
-		if ( 'path/to/file.jpg' === $file_path ) {
-			$files_to_remove = array_diff( $files_to_remove, array( $file_path ) );
+		if ('path/to/file.jpg' === $file_path) {
+			$files_to_remove = array_diff($files_to_remove, array($file_path));
 		}
 
 		return $files_to_remove;
@@ -891,10 +967,11 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function preserve_file_from_local_removal( $preserve, $file_path ) {
+	public function preserve_file_from_local_removal($preserve, $file_path)
+	{
 		// Example stops movie files from being removed from the local server.
-		$extension = pathinfo( $file_path, PATHINFO_EXTENSION );
-		if ( in_array( $extension, array( 'mp4', 'mov' ) ) ) {
+		$extension = pathinfo($file_path, PATHINFO_EXTENSION);
+		if (in_array($extension, array('mp4', 'mov'))) {
 			return true;
 		}
 
@@ -919,7 +996,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: This is a legacy filter, please use `as3cf_upload_object_key_as_private`.
 	 */
-	public function upload_acl( $acl, $data, $post_id ) {
+	public function upload_acl($acl, $data, $post_id)
+	{
 		return 'private';
 	}
 
@@ -938,9 +1016,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: This is a legacy filter, please use `as3cf_upload_object_key_as_private`.
 	 */
-	public function upload_acl_sizes( $acl, $size, $post_id, $metadata ) {
+	public function upload_acl_sizes($acl, $size, $post_id, $metadata)
+	{
 		// Make only thumbnail and medium image sizes private in bucket.
-		if ( 'medium' === $size || 'thumbnail' === $size ) {
+		if ('medium' === $size || 'thumbnail' === $size) {
 			return 'private';
 		}
 
@@ -972,7 +1051,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * This however can be altered by domain mapping plugins or custom code as shown above.
 	 * Therefore it's a good idea to "double down" and include configured domain as well as alternates here.
 	 */
-	public function local_domains( $domains ) {
+	public function local_domains($domains)
+	{
 		// Example allows local URLs to be matched when site accessed as any of the 3 examples.
 		$domains[] = 'example.com';
 		$domains[] = 'example-pro.com';
@@ -980,10 +1060,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 
 		// Example makes sure that the current multisite's canonical domain is included
 		// in match check even if domain mapping etc. has changed the URL of site.
-		if ( is_multisite() ) {
+		if (is_multisite()) {
 			$blog_details = get_blog_details();
 
-			if ( false !== $blog_details && ! in_array( $blog_details->domain, $domains ) ) {
+			if (false !== $blog_details && !in_array($blog_details->domain, $domains)) {
 				$domains[] = $blog_details->domain;
 			}
 		}
@@ -1000,7 +1080,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function use_ssl( $use_ssl ) {
+	public function use_ssl($use_ssl)
+	{
 		$use_ssl = true;
 
 		return $use_ssl;
@@ -1020,14 +1101,15 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: Runs earlier than `as3cf_wp_get_attachment_url`
 	 */
-	public function get_attachment_url( $url, $as3cf_item, $post_id, $expires ) {
+	public function get_attachment_url($url, $as3cf_item, $post_id, $expires)
+	{
 		// Example changes domain to another CDN configured for dedicated movies bucket.
-		if ( 'my-cheaper-infrequent-access-bucket' === $as3cf_item->bucket() ) {
+		if ('my-cheaper-infrequent-access-bucket' === $as3cf_item->bucket()) {
 			// Get current hostname in URL.
-			$hostname = parse_url( $url, PHP_URL_HOST );
+			$hostname = parse_url($url, PHP_URL_HOST);
 
 			// Replace hostname in URL (only if not adorned with port or username/password in this example).
-			$url = str_replace( '//' . $hostname . '/', '//movies.example.com/', $url );
+			$url = str_replace('//' . $hostname . '/', '//movies.example.com/', $url);
 		}
 
 		return $url;
@@ -1045,7 +1127,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: Runs later than `as3cf_get_attachment_url`
 	 */
-	public function wp_get_attachment_url( $url, $post_id ) {
+	public function wp_get_attachment_url($url, $post_id)
+	{
 
 		return $url;
 	}
@@ -1068,12 +1151,13 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function get_attached_file_copy_back_to_local( $copy_back_to_local, $file, $attachment_id ) {
-		if ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) {
+	public function get_attached_file_copy_back_to_local($copy_back_to_local, $file, $attachment_id)
+	{
+		if (!defined('DOING_AJAX') || !DOING_AJAX) {
 			return $copy_back_to_local;
 		}
 
-		if ( isset( $_POST['action'] ) && 'some-plugin-action' == $_POST['action'] ) {
+		if (isset($_POST['action']) && 'some-plugin-action' == $_POST['action']) {
 			$copy_back_to_local = true;
 		}
 
@@ -1089,7 +1173,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return int
 	 */
-	public function default_expires( $expires ) {
+	public function default_expires($expires)
+	{
 		return 60 * 60; // 1 hour
 	}
 
@@ -1107,11 +1192,12 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 * Note: Filter uses 'cloudfront' in name for historical reasons, can be used with any CDN that
 	 * supports the ability to use a path prefix with bucket as source.
 	 */
-	public function cloudfront_path_parts( $path_parts = array(), $domain = '' ) {
+	public function cloudfront_path_parts($path_parts = array(), $domain = '')
+	{
 		// Example would allow a CDN distribution of cdn.example.com/media/ to serve files as cdn.example.com.
 		// Its important to remember that the CDN distribution must have been set up accordingly.
-		if ( 'cdn.example.com' === $domain && 1 < count( $path_parts ) && 'media' === $path_parts[0] ) {
-			unset( $path_parts[0] );
+		if ('cdn.example.com' === $domain && 1 < count($path_parts) && 'media' === $path_parts[0]) {
+			unset($path_parts[0]);
 		}
 
 		return $path_parts;
@@ -1140,7 +1226,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return string
 	 */
-	public function media_actions_capability( $capability ) {
+	public function media_actions_capability($capability)
+	{
 		// Example capability would allow users with an Editor role to use the
 		// on-demand actions as well.
 		return 'delete_others_posts';
@@ -1155,7 +1242,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return int
 	 */
-	public function seconds_between_batches( $value ) {
+	public function seconds_between_batches($value)
+	{
 		// Example gives the site a second to breathe between batches in background tools.
 		return 1;
 	}
@@ -1169,7 +1257,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return int
 	 */
-	public function default_time_limit( $value ) {
+	public function default_time_limit($value)
+	{
 		// Example increases the limit to 25 seconds.
 		return 25;
 	}
@@ -1185,7 +1274,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: No matter how many attachments are determined to need processing in batch, processes no more than 10 attachments at a time with a time limit check after each chunk is processed.
 	 */
-	public function tool_uploader_batch_size( $value ) {
+	public function tool_uploader_batch_size($value)
+	{
 		// Example decreases number of attachments in batch to analyse.
 		return 50;
 	}
@@ -1201,7 +1291,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: No matter how many attachments are determined to need processing in batch, processes no more than 10 attachments at a time with a time limit check after each chunk is processed.
 	 */
-	public function tool_downloader_batch_size( $value ) {
+	public function tool_downloader_batch_size($value)
+	{
 		// Example decreases number of attachments in batch to analyse.
 		return 50;
 	}
@@ -1217,7 +1308,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: No matter how many attachments are determined to need processing in batch, processes no more than 10 attachments at a time with a time limit check after each chunk is processed.
 	 */
-	public function tool_downloader_and_remover_batch_size( $value ) {
+	public function tool_downloader_and_remover_batch_size($value)
+	{
 		// Example decreases number of attachments in batch to analyse.
 		return 50;
 	}
@@ -1233,7 +1325,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: No matter how many attachments are determined to need processing in batch, processes no more than 10 attachments at a time with a time limit check after each chunk is processed.
 	 */
-	public function tool_copy_buckets_batch_size( $value ) {
+	public function tool_copy_buckets_batch_size($value)
+	{
 		// Example decreases number of attachments in batch to analyse.
 		return 50;
 	}
@@ -1249,7 +1342,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * Note: No matter how many attachments are determined to need processing in batch, processes no more than 10 attachments at a time with a time limit check after each chunk is processed.
 	 */
-	public function tool_remove_local_files_batch_size( $value ) {
+	public function tool_remove_local_files_batch_size($value)
+	{
 		// Example decreases number of attachments in batch to analyse.
 		return 50;
 	}
@@ -1272,7 +1366,8 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 *
 	 * @return bool
 	 */
-	public function assets_pull_test_endpoint_sslverify( $verify, $domain ) {
+	public function assets_pull_test_endpoint_sslverify($verify, $domain)
+	{
 		return false;
 	}
 }
